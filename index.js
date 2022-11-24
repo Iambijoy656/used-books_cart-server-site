@@ -25,11 +25,52 @@ async function run() {
         const categoriesCollection = client.db('booksCart').collection('categories')
         const booksCollection = client.db('booksCart').collection('allBooks')
 
+        // get all categories
         app.get('/categories', async (req, res) => {
             const query = {};
             const categories = await categoriesCollection.find(query).toArray()
             res.send(categories)
         })
+
+
+        // get all books
+        app.get('/allBooks', async (req, res) => {
+            const query = {}
+            const cursor = booksCollection.find(query)
+            const allBooks = await cursor.toArray();
+            res.send(allBooks)
+        })
+
+        // app.post('/services', async (req, res) => {
+        //     const service = req.body;
+        //     const result = await serviceCollection.insertOne(service);
+        //     res.send(result)
+
+        // })
+
+
+
+        app.get('/getLimitBooks', async (req, res) => {
+            const query = {}
+            const cursor = booksCollection.find(query)
+            const books = await cursor.limit(6).toArray();
+            res.send(books)
+        })
+
+
+        // app.get('/services/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) }
+        //     const service = await serviceCollection.findOne(query);
+        //     res.send(service)
+        // })
+
+
+
+
+
+
+
 
     } finally {
 
