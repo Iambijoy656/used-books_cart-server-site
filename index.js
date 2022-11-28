@@ -20,6 +20,31 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    // console.log(authHeader);
+    if (!authHeader) {
+        return res.status(401).send('Unauthorize access');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
+        req.decoded = decoded
+        next();
+    })
+}
+
+
+
+
+
+
+
 async function run() {
     try {
         const categoriesCollection = client.db('booksCart').collection('categories')
@@ -28,8 +53,6 @@ async function run() {
         const buyerDetailsCollection = client.db('booksCart').collection('buyerDetails')
 
         const usersCollection = client.db('booksCart').collection('users')
-
-
 
 
 
@@ -96,17 +119,13 @@ async function run() {
 
 
 
+        //  buyers
 
-
-
-
-        // Users
-
-        // app.get('/users', async (req, res) => {
-        //     const query = {};
-        //     const users = await usersCollection.find(query).toArray();
-        //     res.send(users)
-        // })
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users)
+        })
 
 
         // app.get('/users/admin/:email', async (req, res) => {
@@ -145,8 +164,12 @@ async function run() {
 
         // buyer details 
 
-        app.get('/orders', async (req, res) => {
-            const email = req.query.email
+        app.get('/orders', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const query = { email: email }
             const orders = await buyerDetailsCollection.find(query).toArray();
             res.send(orders)
