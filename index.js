@@ -25,7 +25,13 @@ async function run() {
         const categoriesCollection = client.db('booksCart').collection('categories')
         const booksCollection = client.db('booksCart').collection('allBooks')
 
+        const buyerDetailsCollection = client.db('booksCart').collection('buyerDetails')
+
         const usersCollection = client.db('booksCart').collection('users')
+
+
+
+
 
         // get all categories
         app.get('/categories', async (req, res) => {
@@ -33,6 +39,9 @@ async function run() {
             const categories = await categoriesCollection.find(query).toArray()
             res.send(categories)
         })
+
+
+
 
 
 
@@ -51,8 +60,7 @@ async function run() {
         // get all books
         app.get('/allBooks', async (req, res) => {
             const query = {}
-            const cursor = booksCollection.find(query)
-            const allBooks = await cursor.toArray();
+            const allBooks = await booksCollection.find(query).toArray();
             res.send(allBooks)
         })
 
@@ -67,13 +75,38 @@ async function run() {
 
 
 
+
+        // jwt
+
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_KEY, { expiresIn: '10h' })
+                return res.send({ accessToken: token });
+            }
+
+            console.log(user)
+            res.status(403).send({ accessToken: '' })
+
+        })
+
+
+
+
+
+
+
+
+
         // Users
 
-        app.get('/users', async (req, res) => {
-            const query = {};
-            const users = await usersCollection.find(query).toArray();
-            res.send(users)
-        })
+        // app.get('/users', async (req, res) => {
+        //     const query = {};
+        //     const users = await usersCollection.find(query).toArray();
+        //     res.send(users)
+        // })
 
 
         // app.get('/users/admin/:email', async (req, res) => {
@@ -107,6 +140,26 @@ async function run() {
         //     res.send(result)
         // })
 
+
+
+
+        // buyer details 
+
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email
+            const query = { email: email }
+            const orders = await buyerDetailsCollection.find(query).toArray();
+            res.send(orders)
+
+        })
+
+
+        app.post('/buyers', async (req, res) => {
+            const buyer = req.body;
+            const result = await buyerDetailsCollection.insertOne(buyer)
+            res.send(result)
+
+        })
 
 
 
