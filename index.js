@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const port = process.env.PORT || 5000;
 
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 
 // middleware
 app.use(cors())
@@ -54,6 +54,7 @@ async function run() {
 
         const usersCollection = client.db('booksCart').collection('users')
 
+        const paymentsCollection = client.db('booksCart').collection('payments')
 
 
         // get all categories
@@ -247,6 +248,55 @@ async function run() {
             res.send(result)
 
         })
+
+
+
+
+
+        //for payment
+        app.post('/create-payment-intent', async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ],
+
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            console.log(payment)
+            const result = await paymentsCollection.insertOne(payment);
+            const _id = payment.orderId
+            const filter = { _id: ObjectId(_id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await buyerDetailsCollection.updateOne(filter, updatedDoc)
+            res.send(result)
+        })
+
+
+
+
+
+
+
+
+
+
 
 
     } finally {
