@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -66,8 +66,6 @@ async function run() {
 
 
 
-
-
         app.get('/category/:name', async (req, res) => {
             const name = req.params.name;
             console.log(name);
@@ -119,22 +117,6 @@ async function run() {
 
 
 
-        //  buyers
-
-        app.get('/users', async (req, res) => {
-            const query = {};
-            const users = await usersCollection.find(query).toArray();
-            res.send(users)
-        })
-
-
-        // app.get('/users/admin/:email', async (req, res) => {
-        //     const email = req.params.email;
-        //     const query = { email }
-        //     const user = await usersCollection.findOne(query)
-        //     res.send({ isAdmin: user?.role === 'admin' })
-        // })
-
 
 
         app.post('/users', async (req, res) => {
@@ -145,31 +127,63 @@ async function run() {
         })
 
 
-        // app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
-        //     const id = req.params.id;
-        //     const filter = { _id: ObjectId(id) }
-        //     const options = { upsert: true }
-        //     const updatedDoc = {
-        //         $set: {
-        //             role: 'admin',
-        //         }
-        //     }
-        //     const result = await usersCollection.updateOne(filter, updatedDoc, options)
-
-        //     res.send(result)
-        // })
 
 
-
-
-        // buyer details 
-
-        app.get('/orders', verifyJWT, async (req, res) => {
+        app.get('/userRole', async (req, res) => {
             const email = req.query.email;
-            const decodedEmail = req.decoded.email
-            if (email !== decodedEmail) {
-                return res.status(403).send({ message: 'forbidden access' });
+            const query = { email: email }
+
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role === "admin") {
+                res.send(user)
             }
+            else if (user?.role === "seller") {
+                res.send(user)
+            }
+            else {
+                res.send(user)
+            }
+
+        })
+
+
+
+
+        //  buyers
+
+        app.get('/buyers', async (req, res) => {
+            const query = {
+                role: "buyer",
+            };
+            const buyers = await usersCollection.find(query).toArray();
+            res.send(buyers)
+
+
+        })
+
+        // get Sellers
+        app.get('/sellers', async (req, res) => {
+            const query = {
+                role: "seller",
+            };
+            const sellers = await usersCollection.find(query).toArray();
+            res.send(sellers)
+
+
+        })
+
+
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const order = await buyerDetailsCollection.findOne(query);
+            res.send(order)
+        })
+
+
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email;
             const query = { email: email }
             const orders = await buyerDetailsCollection.find(query).toArray();
             res.send(orders)
@@ -185,8 +199,54 @@ async function run() {
         })
 
 
+        // delete buyer
+        app.delete('/buyers/delete-buyers', async (req, res) => {
+            const id = req.query.id;
+            const filter = { _id: ObjectId(id) }
+            const result = await usersCollection.deleteOne(filter)
+            res.send(result)
+
+        })
 
 
+
+
+        app.post('/add-products', async (req, res) => {
+            const product = req.body;
+            const result = await booksCollection.insertOne(product);
+            res.send(result)
+        })
+
+
+        app.get('/my-products', async (req, res) => {
+            const email = req.query.email;
+            const query = {
+                sellerEmail: email
+            }
+            const myProducts = await booksCollection.find(query).toArray()
+            res.send(myProducts)
+
+
+        })
+        app.get('/getReported', async (req, res) => {
+            const query = {
+                reported: false
+            }
+            const reportedProducts = await booksCollection.find(query).toArray()
+            res.send(reportedProducts)
+
+
+        })
+
+
+
+        app.delete('/delete-product', async (req, res) => {
+            const id = req.query.id;
+            const filter = { _id: ObjectId(id) }
+            const result = await booksCollection.deleteOne(filter)
+            res.send(result)
+
+        })
 
 
     } finally {
