@@ -231,13 +231,14 @@ async function run() {
         })
         app.get('/getReported', async (req, res) => {
             const query = {
-                reported: false
+                reported: true
             }
             const reportedProducts = await booksCollection.find(query).toArray()
             res.send(reportedProducts)
 
 
         })
+
 
 
 
